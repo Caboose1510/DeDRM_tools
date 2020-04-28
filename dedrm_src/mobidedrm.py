@@ -139,7 +139,7 @@ def unicode_argv():
         argvencoding = sys.stdin.encoding
         if argvencoding == None:
             argvencoding = 'utf-8'
-        return [arg if (type(arg) == unicode) else unicode(arg,argvencoding) for arg in sys.argv]
+        return arg
 
 
 class DrmException(Exception):
@@ -342,7 +342,7 @@ class MobiBook:
         if title == '':
             title = self.header[:32]
             title = title.split('\0')[0]
-        return unicode(title, codec)
+        return title.decode(title, codec)
 
     def getPIDMetaInfo(self):
         rec209 = ''
