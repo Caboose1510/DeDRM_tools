@@ -306,7 +306,7 @@ def gui_main():
             self.status['text'] = u"Generating..."
             try:
                 userkey = generate_key(name, ccn)
-            except Exception, e:
+            except Exception as e:
                 self.status['text'] = u"Error: (0}".format(e.args[0])
                 return
             open(keypath,'wb').write(userkey)

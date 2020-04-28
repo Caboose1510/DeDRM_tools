@@ -319,7 +319,7 @@ def gui_main():
                 keyfileout.write(key)
             success = True
             tkMessageBox.showinfo(progname, u"Key successfully retrieved to {0}".format(outfile))
-    except DrmException, e:
+    except DrmException as e:
         tkMessageBox.showerror(progname, u"Error: {0}".format(str(e)))
     except Exception:
         root.wm_state('normal')

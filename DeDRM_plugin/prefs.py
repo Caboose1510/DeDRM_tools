@@ -101,7 +101,7 @@ def convertprefs(always = False):
                 keyname = u"{0}_{1}".format(name.strip(),ccn.strip()[-4:])
                 keyvalue = generate_key(name, ccn)
                 userkeys.append([keyname,keyvalue])
-            except Exception, e:
+            except Exception as e:
                 traceback.print_exc()
                 print e.args[0]
                 pass
@@ -118,7 +118,7 @@ def convertprefs(always = False):
                 keyname = u"{0}_{1}".format(name.strip(),cc.strip()[-4:])
                 keyvalue = getuser_key(name,cc).encode('hex')
                 userkeys.append([keyname,keyvalue])
-            except Exception, e:
+            except Exception as e:
                 traceback.print_exc()
                 print e.args[0]
                 pass

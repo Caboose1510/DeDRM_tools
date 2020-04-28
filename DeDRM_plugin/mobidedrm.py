@@ -532,7 +532,7 @@ def cli_main():
         try:
             stripped_file = getUnencryptedBook(infile, pidlist)
             file(outfile, 'wb').write(stripped_file)
-        except DrmException, e:
+        except DrmException as e:
             print(u"MobiDeDRM v{0} Error: {1:s}".format(__version__,e.args[0]))
             return 1
     return 0

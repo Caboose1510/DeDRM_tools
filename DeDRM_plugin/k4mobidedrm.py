@@ -255,7 +255,7 @@ def decryptBook(infile, outdir, kDatabaseFiles, androidFiles, serials, pids):
             with open(dbfile, 'r') as keyfilein:
                 kindleDatabase = json.loads(keyfilein.read())
             kDatabases.append([dbfile,kindleDatabase])
-        except Exception, e:
+        except Exception as e:
             print u"Error getting database from file {0:s}: {1:s}".format(dbfile,e)
             traceback.print_exc()
 
@@ -263,7 +263,7 @@ def decryptBook(infile, outdir, kDatabaseFiles, androidFiles, serials, pids):
 
     try:
         book = GetDecryptedBook(infile, kDatabases, androidFiles, serials, pids, starttime)
-    except Exception, e:
+    except Exception as e:
         print u"Error decrypting book after {1:.1f} seconds: {0}".format(e.args[0],time.time()-starttime)
         traceback.print_exc()
         return 1
