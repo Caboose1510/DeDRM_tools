@@ -289,7 +289,7 @@ class ManageKeysDialog(QDialog):
 
     def getwineprefix(self):
         if self.wineprefix is not None:
-            return unicode(self.wp_lineedit.text()).strip()
+            return self.wp_lineedit.text().strip()
         return u""
 
     def populate_list(self):
@@ -338,7 +338,7 @@ class ManageKeysDialog(QDialog):
         if d.result() != d.Accepted:
             # rename cancelled or moot.
             return
-        keyname = unicode(self.listy.currentItem().text())
+        keyname = self.listy.currentItem().text()
         if not question_dialog(self, "{0} {1}: Confirm Rename".format(PLUGIN_NAME, PLUGIN_VERSION), u"Do you really want to rename the {2} named <strong>{0}</strong> to <strong>{1}</strong>?".format(keyname,d.key_name,self.key_type_name), show_copy_button=False, default_yes=False):
             return
         self.plugin_keys[d.key_name] = self.plugin_keys[keyname]
@@ -350,7 +350,7 @@ class ManageKeysDialog(QDialog):
     def delete_key(self):
         if not self.listy.currentItem():
             return
-        keyname = unicode(self.listy.currentItem().text())
+        keyname = self.listy.currentItem().text()
         if not question_dialog(self, "{0} {1}: Confirm Delete".format(PLUGIN_NAME, PLUGIN_VERSION), u"Do you really want to delete the {1} <strong>{0}</strong>?".format(keyname, self.key_type_name), show_copy_button=False, default_yes=False):
             return
         if type(self.plugin_keys) == dict:
@@ -434,7 +434,7 @@ class ManageKeysDialog(QDialog):
             r = error_dialog(None, "{0} {1}".format(PLUGIN_NAME, PLUGIN_VERSION),
                                     _(errmsg), show=True, show_copy_button=False)
             return
-        keyname = unicode(self.listy.currentItem().text())
+        keyname = self.listy.currentItem().text()
         unique_dlg_name = PLUGIN_NAME + u"export {0} keys".format(self.key_type_name).replace(' ', '_') #takes care of automatically remembering last directory
         caption = u"Save {0} File as...".format(self.key_type_name)
         filters = [(u"{0} Files".format(self.key_type_name), [u"{0}".format(self.keyfile_ext)])]
@@ -485,7 +485,7 @@ class RenameKeyDialog(QDialog):
         self.resize(self.sizeHint())
 
     def accept(self):
-        if not unicode(self.key_ledit.text()) or unicode(self.key_ledit.text()).isspace():
+        if not self.key_ledit.text() or self.key_ledit.text().isspace():
             errmsg = u"Key name field cannot be empty!"
             return error_dialog(None, "{0} {1}".format(PLUGIN_NAME, PLUGIN_VERSION),
                                     _(errmsg), show=True, show_copy_button=False)
@@ -506,7 +506,7 @@ class RenameKeyDialog(QDialog):
 
     @property
     def key_name(self):
-        return unicode(self.key_ledit.text()).strip()
+        return self.key_ledit.text().strip()
 
 
 
@@ -589,19 +589,19 @@ class AddBandNKeyDialog(QDialog):
 
     @property
     def key_name(self):
-        return unicode(self.key_ledit.text()).strip()
+        return self.key_ledit.text().strip()
 
     @property
     def key_value(self):
-        return unicode(self.key_display.text()).strip()
+        return self.key_display.text().strip()
 
     @property
     def user_name(self):
-        return unicode(self.name_ledit.text()).strip().lower().replace(' ','')
+        return self.name_ledit.text().strip().lower().replace(' ','')
 
     @property
     def cc_number(self):
-        return unicode(self.cc_ledit.text()).strip()
+        return self.cc_ledit.text().strip()
 
     def retrieve_key(self):
         from calibre_plugins.dedrm.ignoblekeyfetch import fetch_key as fetch_bandn_key
@@ -675,7 +675,7 @@ class AddEReaderDialog(QDialog):
 
     @property
     def key_name(self):
-        return unicode(self.key_ledit.text()).strip()
+        return self.key_ledit.text().strip()
 
     @property
     def key_value(self):
@@ -684,11 +684,11 @@ class AddEReaderDialog(QDialog):
 
     @property
     def user_name(self):
-        return unicode(self.name_ledit.text()).strip().lower().replace(' ','')
+        return self.name_ledit.text().strip().lower().replace(' ','')
 
     @property
     def cc_number(self):
-        return unicode(self.cc_ledit.text()).strip().replace(' ', '').replace('-','')
+        return self.cc_ledit.text().strip().replace(' ', '').replace('-','')
 
 
     def accept(self):
@@ -758,7 +758,7 @@ class AddAdeptDialog(QDialog):
 
     @property
     def key_name(self):
-        return unicode(self.key_ledit.text()).strip()
+        return self.key_ledit.text().strip()
 
     @property
     def key_value(self):
@@ -830,7 +830,7 @@ class AddKindleDialog(QDialog):
 
     @property
     def key_name(self):
-        return unicode(self.key_ledit.text()).strip()
+        return self.key_ledit.text().strip()
 
     @property
     def key_value(self):
@@ -876,11 +876,11 @@ class AddSerialDialog(QDialog):
 
     @property
     def key_name(self):
-        return unicode(self.key_ledit.text()).strip()
+        return self.key_ledit.text().strip()
 
     @property
     def key_value(self):
-        return unicode(self.key_ledit.text()).replace(' ', '')
+        return self.key_ledit.text().replace(' ', '')
 
     def accept(self):
         if len(self.key_name) == 0 or self.key_name.isspace():
@@ -934,11 +934,11 @@ class AddAndroidDialog(QDialog):
 
     @property
     def key_name(self):
-        return unicode(self.key_ledit.text()).strip()
+        return self.key_ledit.text().strip()
 
     @property
     def file_name(self):
-        return unicode(self.selected_file_name.text()).strip()
+        return self.selected_file_name.text().strip()
 
     @property
     def key_value(self):
@@ -1004,11 +1004,11 @@ class AddPIDDialog(QDialog):
 
     @property
     def key_name(self):
-        return unicode(self.key_ledit.text()).strip()
+        return self.key_ledit.text().strip()
 
     @property
     def key_value(self):
-        return unicode(self.key_ledit.text()).strip()
+        return self.key_ledit.text().strip()
 
     def accept(self):
         if len(self.key_name) == 0 or self.key_name.isspace():

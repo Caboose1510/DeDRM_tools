@@ -134,7 +134,7 @@ def unicode_argv():
         argvencoding = sys.stdin.encoding
         if argvencoding == None:
             argvencoding = "utf-8"
-        return [arg if (type(arg) == unicode) else unicode(arg,argvencoding) for arg in sys.argv]
+        return arg
 
 Des = None
 if iswindows:
@@ -361,7 +361,7 @@ class EreaderProcessor(object):
         sect = self.section_reader(self.first_image_page + i)
         name = sect[4:4+32].strip('\0')
         data = sect[62:]
-        return sanitizeFileName(unicode(name,'windows-1252')), data
+        return sanitizeFileName(name.decode('windows-1252')), data
 
 
     # def getChapterNamePMLOffsetData(self):

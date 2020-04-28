@@ -39,7 +39,7 @@ else:
     def convert_qvariant(x):
         vt = x.type()
         if vt == x.String:
-            return unicode(x.toString())
+            return x.toString()
         if vt == x.List:
             return [convert_qvariant(i) for i in x.toList()]
         return x.toPyObject()

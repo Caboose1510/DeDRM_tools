@@ -107,7 +107,7 @@ def unicode_argv():
         argvencoding = sys.stdin.encoding
         if argvencoding == None:
             argvencoding = "utf-8"
-        return [arg if (type(arg) == unicode) else unicode(arg,argvencoding) for arg in sys.argv]
+        return arg
 
 class DrmException(Exception):
     pass
@@ -934,7 +934,6 @@ if iswindows:
     # Returns Environmental Variables that contain unicode
     def getEnvironmentVariable(name):
         import ctypes
-        name = unicode(name) # make sure string argument is unicode
         n = ctypes.windll.kernel32.GetEnvironmentVariableW(name, None, 0)
         if n == 0:
             return None

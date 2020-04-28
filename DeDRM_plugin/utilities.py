@@ -21,8 +21,8 @@ DETAILED_MESSAGE = \
 
 def uStrCmp (s1, s2, caseless=False):
     import unicodedata as ud
-    str1 = s1 if isinstance(s1, unicode) else unicode(s1)
-    str2 = s2 if isinstance(s2, unicode) else unicode(s2)
+    str1 = s1 if isinstance(s1, unicode) else s1.decode('utf-8')
+    str2 = s2 if isinstance(s2, unicode) else s2.decode('utf-8')
     if caseless:
         return ud.normalize('NFC', str1.lower()) == ud.normalize('NFC', str2.lower())
     else:
