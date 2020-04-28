@@ -82,16 +82,17 @@ PLUGIN_VERSION = u".".join([str(x) for x in PLUGIN_VERSION_TUPLE])
 # Include an html helpfile in the plugin's zipfile with the following name.
 RESOURCE_NAME = PLUGIN_NAME + '_Help.htm'
 
+import codecs
 import sys, os, re
 import time
 import zipfile
 import traceback
 from zipfile import ZipFile
 
-import erdr2pml
-import ineptpdf
-import k4mobidedrm
-import zipfix
+import calibre_plugins.dedrm.erdr2pml
+import calibre_plugins.dedrm.ineptpdf
+import calibre_plugins.dedrm.k4mobidedrm
+import calibre_plugins.dedrm.zipfix
 
 class DeDRMError(Exception):
     pass
@@ -112,7 +113,7 @@ class SafeUnbuffered:
         if self.encoding == None:
             self.encoding = "utf-8"
     def write(self, data):
-        if isinstance(data,unicode):
+        if isinstance(data,bytes):
             data = data.encode(self.encoding,"replace")
         try:
             self.stream.write(data)
@@ -317,7 +318,7 @@ class DeDRM(FileTypePlugin):
 
             # Attempt to decrypt epub with each encryption key (generated or provided).
             for keyname, userkeyhex in dedrmprefs['adeptkeys'].items():
-                userkey = userkeyhex.decode('hex')
+                userkey = codecs.decode(userkeyhex, 'hex')
                 print(u"{0} v{1}: Trying Encryption key {2:s}".format(PLUGIN_NAME, PLUGIN_VERSION, keyname))
                 of = self.temporary_file(u".epub")
 

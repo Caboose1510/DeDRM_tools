@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import with_statement
+from __future__ import print_function
 
 # ignoblekeygen.pyw, version 2.5
 # Copyright © 2009-2010 i♥cabbages
@@ -38,7 +39,6 @@ from __future__ import with_statement
 """
 Generate Barnes & Noble EPUB user key from name and credit card number.
 """
-from __future__ import print_function
 
 __license__ = 'GPL v3'
 __version__ = "2.8"
@@ -57,7 +57,7 @@ class SafeUnbuffered:
         if self.encoding == None:
             self.encoding = "utf-8"
     def write(self, data):
-        if isinstance(data,unicode):
+        if isinstance(data,bytes):
             data = data.encode(self.encoding,"replace")
         self.stream.write(data)
         self.stream.flush()
@@ -98,7 +98,7 @@ def unicode_argv():
             # Remove Python executable and commands if present
             start = argc.value - len(sys.argv)
             return [argv[i] for i in
-                    xrange(start, argc.value)]
+                    range(start, argc.value)]
         # if we don't have any arguments at all, just pass back script name
         # this should never happen
         return [u"ignoblekeygen.py"]
@@ -106,7 +106,7 @@ def unicode_argv():
         argvencoding = sys.stdin.encoding
         if argvencoding == None:
             argvencoding = "utf-8"
-        return arg
+        return argv
 
 
 class IGNOBLEError(Exception):
@@ -199,9 +199,9 @@ def normalize_name(name):
 
 def generate_key(name, ccn):
     # remove spaces and case from name and CC numbers.
-    if type(name)==unicode:
+    if type(name)==bytes:
         name = name.encode('utf-8')
-    if type(ccn)==unicode:
+    if type(ccn)==bytes:
         ccn = ccn.encode('utf-8')
 
     name = normalize_name(name) + '\x00'

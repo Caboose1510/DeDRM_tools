@@ -22,7 +22,7 @@ try:
     from PyQt5 import Qt as QtGui
 except ImportError:
     from PyQt4 import QtGui
-    
+
 from zipfile import ZipFile
 
 # calibre modules and constants.
@@ -123,7 +123,7 @@ class ConfigWidget(QWidget):
     def kindle_serials(self):
         d = ManageKeysDialog(self,u"EInk Kindle Serial Number",self.tempdedrmprefs['serials'], AddSerialDialog)
         d.exec_()
-        
+
     def kindle_android(self):
         d = ManageKeysDialog(self,u"Kindle for Android Key",self.tempdedrmprefs['androidkeys'], AddAndroidDialog, 'k4a')
         d.exec_()
@@ -388,7 +388,7 @@ class ManageKeysDialog(QDialog):
                 with open(fpath,'rb') as keyfile:
                     new_key_value = keyfile.read()
                 if self.binary_file:
-                    new_key_value = new_key_value.encode('hex')
+                    new_key_value = new_key_value.hex()
                 elif self.json_file:
                     new_key_value = json.loads(new_key_value)
                 elif self.android_file:
@@ -412,7 +412,7 @@ class ManageKeysDialog(QDialog):
                     else:
                         counter += 1
                         self.plugin_keys[new_key_name] = new_key_value
-                            
+
             msg = u""
             if counter+skipped > 1:
                 if counter > 0:
@@ -819,7 +819,7 @@ class AddKindleDialog(QDialog):
             default_key_error = QLabel(u"The default encryption key for Kindle for Mac/PC could not be found.", self)
             default_key_error.setAlignment(Qt.AlignHCenter)
             layout.addWidget(default_key_error)
-            
+
             # if no default, both buttons do the same
             self.button_box.accepted.connect(self.reject)
 
@@ -916,7 +916,7 @@ class AddAndroidDialog(QDialog):
         self.selected_file_name = QLabel(u"",self)
         self.selected_file_name.setAlignment(Qt.AlignHCenter)
         file_group.addWidget(self.selected_file_name)
-        
+
         key_group = QHBoxLayout()
         data_group_box_layout.addLayout(key_group)
         key_group.addWidget(QLabel(u"Unique Key Name:", self))
@@ -926,7 +926,7 @@ class AddAndroidDialog(QDialog):
         #key_label = QLabel(_(''), self)
         #key_label.setAlignment(Qt.AlignHCenter)
         #data_group_box_layout.addWidget(key_label)
-        
+
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
         layout.addWidget(self.button_box)
@@ -943,7 +943,7 @@ class AddAndroidDialog(QDialog):
     @property
     def key_value(self):
         return self.serials_from_file
-        
+
     def get_android_file(self):
         unique_dlg_name = PLUGIN_NAME + u"Import Kindle for Android backup file" #takes care of automatically remembering last directory
         caption = u"Select Kindle for Android backup file to add"
@@ -961,7 +961,7 @@ class AddAndroidDialog(QDialog):
                     file_name = os.path.basename(self.filename)
                     self.serials_from_file.extend(file_serials)
         self.selected_file_name.setText(file_name)
-    
+
 
     def accept(self):
         if len(self.file_name) == 0 or len(self.key_value) == 0:

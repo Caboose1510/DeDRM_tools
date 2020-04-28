@@ -3,7 +3,7 @@
 
 from __future__ import with_statement
 
-from ignoblekeygen import generate_key
+from calibre_plugins.dedrm.ignoblekeygen import generate_key
 
 __license__ = 'GPL v3'
 

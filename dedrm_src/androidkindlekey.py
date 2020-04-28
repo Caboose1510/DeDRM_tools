@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import with_statement
+from __future__ import print_function
 
 # androidkindlekey.py
 # Copyright © 2013-15 by Thom and Apprentice Harper
@@ -21,7 +22,6 @@ from __future__ import with_statement
 """
 Retrieve Kindle for Android Serial Number.
 """
-from __future__ import print_function
 
 __license__ = 'GPL v3'
 __version__ = '1.5'
@@ -34,7 +34,10 @@ import tempfile
 import zlib
 import tarfile
 from hashlib import md5
-from cStringIO import StringIO
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from io import BytesIO as StringIO
 from binascii import a2b_hex, b2a_hex
 
 # Routines common to Mac and PC
@@ -49,7 +52,7 @@ class SafeUnbuffered:
         if self.encoding == None:
             self.encoding = "utf-8"
     def write(self, data):
-        if isinstance(data,unicode):
+        if isinstance(data,bytes):
             data = data.encode(self.encoding,"replace")
         self.stream.write(data)
         self.stream.flush()
@@ -90,7 +93,7 @@ def unicode_argv():
             # Remove Python executable and commands if present
             start = argc.value - len(sys.argv)
             return [argv[i] for i in
-                    xrange(start, argc.value)]
+                    range(start, argc.value)]
         # if we don't have any arguments at all, just pass back script name
         # this should never happen
         return [u"kindlekey.py"]
@@ -98,7 +101,7 @@ def unicode_argv():
         argvencoding = sys.stdin.encoding
         if argvencoding == None:
             argvencoding = "utf-8"
-        return arg
+        return argv
 
 class DrmException(Exception):
     pass
@@ -248,7 +251,7 @@ def get_serials2(path=STORAGE2):
             traceback.print_exc()
             pass
     tokens = list(set(tokens))
- 
+
     serials = []
     for x in dsns:
         serials.append(x)
@@ -313,7 +316,7 @@ __all__ = [ 'get_serials', 'getkey']
 def getkey(outfile, inpath):
     keys = get_serials(inpath)
     if len(keys) > 0:
-        with file(outfile, 'w') as keyfileout:
+        with open(outfile, 'w') as keyfileout:
             for key in keys:
                 keyfileout.write(key)
                 keyfileout.write("\n")
@@ -340,7 +343,7 @@ def cli_main():
 
     try:
         opts, args = getopt.getopt(argv[1:], "hb:")
-    except getopt.GetoptError, err:
+    except getopt.GetoptError as err:
         usage(progname)
         print(u"\nError in options or arguments: {0}".format(err.args[0]))
         return 2
@@ -444,7 +447,7 @@ def gui_main():
                         if not os.path.exists(outfile):
                             break
 
-                    with file(outfile, 'w') as keyfileout:
+                    with open(outfile, 'w') as keyfileout:
                         keyfileout.write(key)
                     success = True
                     tkMessageBox.showinfo(progname, u"Key successfully retrieved to {0}".format(outfile))

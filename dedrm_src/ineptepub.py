@@ -51,6 +51,7 @@ Decrypt Adobe Digital Editions encrypted ePub books.
 __license__ = 'GPL v3'
 __version__ = "6.6"
 
+import codecs
 import sys
 import os
 import traceback
@@ -70,7 +71,7 @@ class SafeUnbuffered:
         if self.encoding == None:
             self.encoding = "utf-8"
     def write(self, data):
-        if isinstance(data,unicode):
+        if isinstance(data,bytes):
             data = data.encode(self.encoding,"replace")
         self.stream.write(data)
         self.stream.flush()
@@ -111,13 +112,13 @@ def unicode_argv():
             # Remove Python executable and commands if present
             start = argc.value - len(sys.argv)
             return [argv[i] for i in
-                    xrange(start, argc.value)]
+                    range(start, argc.value)]
         return [u"ineptepub.py"]
     else:
         argvencoding = sys.stdin.encoding
         if argvencoding == None:
             argvencoding = "utf-8"
-        return arg
+        return argv
 
 
 class ADEPTError(Exception):
@@ -205,7 +206,7 @@ def _load_crypto_libcrypto():
 
         def decrypt(self, data):
             out = create_string_buffer(len(data))
-            iv = ("\x00" * self._blocksize)
+            iv = (b"\x00" * self._blocksize)
             rv = AES_cbc_encrypt(data, out, len(data), self._key, iv, 0)
             if rv == 0:
                 raise ADEPTError('AES decryption failed')
@@ -315,12 +316,12 @@ def _load_crypto_pycrypto():
     class RSA(object):
         def __init__(self, der):
             key = ASN1Parser([ord(x) for x in der])
-            key = [key.getChild(x).value for x in xrange(1, 4)]
+            key = [key.getChild(x).value for x in range(1, 4)]
             key = [self.bytesToNumber(v) for v in key]
             self._rsa = _RSA.construct(key)
 
         def bytesToNumber(self, bytes):
-            total = 0L
+            total = 0
             for byte in bytes:
                 total = (total << 8) + byte
             return total
@@ -366,7 +367,7 @@ class Decryptor(object):
     def decompress(self, bytes):
         dc = zlib.decompressobj(-15)
         bytes = dc.decompress(bytes)
-        ex = dc.decompress('Z') + dc.flush()
+        ex = dc.decompress(b'Z') + dc.flush()
         if ex:
             bytes = bytes + ex
         return bytes
@@ -374,7 +375,7 @@ class Decryptor(object):
     def decrypt(self, path, data):
         if path.encode('utf-8') in self._encrypted:
             data = self._aes.decrypt(data)[16:]
-            data = data[:-ord(data[-1])]
+            data = data[:-data[-1]]
             data = self.decompress(data)
         return data
 
@@ -405,7 +406,7 @@ def decryptBook(userkey, inpath, outpath):
         namelist = set(inf.namelist())
         if 'META-INF/rights.xml' not in namelist or \
            'META-INF/encryption.xml' not in namelist:
-            print u"{0:s} is DRM-free.".format(os.path.basename(inpath))
+            print(u"{0:s} is DRM-free.".format(os.path.basename(inpath)))
             return 1
         for name in META_NAMES:
             namelist.remove(name)
@@ -415,12 +416,13 @@ def decryptBook(userkey, inpath, outpath):
             expr = './/%s' % (adept('encryptedKey'),)
             bookkey = ''.join(rights.findtext(expr))
             if len(bookkey) != 172:
-                print u"{0:s} is not a secure Adobe Adept ePub.".format(os.path.basename(inpath))
+                print(u"{0:s} is not a secure Adobe Adept ePub.".format(os.path.basename(inpath)))
                 return 1
-            bookkey = rsa.decrypt(bookkey.decode('base64'))
+            bookkey = rsa.decrypt(codecs.decode(bookkey.encode('ascii'), 'base64'))
             # Padded as per RSAES-PKCS1-v1_5
-            if bookkey[-17] != '\x00':
-                print u"Could not decrypt {0:s}. Wrong key".format(os.path.basename(inpath))
+            print(bookkey[-17])
+            if bookkey[-17] != 0:
+                print(u"Could not decrypt {0:s}. Wrong key".format(os.path.basename(inpath)))
                 return 2
             encryption = inf.read('META-INF/encryption.xml')
             decryptor = Decryptor(bookkey[-16:], encryption)
@@ -461,7 +463,7 @@ def decryptBook(userkey, inpath, outpath):
                         pass
                     outf.writestr(zi, decryptor.decrypt(path, data))
         except:
-            print u"Could not decrypt {0:s} because of an exception:\n{1:s}".format(os.path.basename(inpath), traceback.format_exc())
+            print(u"Could not decrypt {0:s} because of an exception:\n{1:s}".format(os.path.basename(inpath), traceback.format_exc()))
             return 2
     return 0
 
@@ -472,13 +474,13 @@ def cli_main():
     argv=unicode_argv()
     progname = os.path.basename(argv[0])
     if len(argv) != 4:
-        print u"usage: {0} <keyfile.der> <inbook.epub> <outbook.epub>".format(progname)
+        print(u"usage: {0} <keyfile.der> <inbook.epub> <outbook.epub>".format(progname))
         return 1
     keypath, inpath, outpath = argv[1:]
     userkey = open(keypath,'rb').read()
     result = decryptBook(userkey, inpath, outpath)
     if result == 0:
-        print u"Successfully decrypted {0:s} as {1:s}".format(os.path.basename(inpath),os.path.basename(outpath))
+        print(u"Successfully decrypted {0:s} as {1:s}".format(os.path.basename(inpath),os.path.basename(outpath)))
     return result
 
 def gui_main():
