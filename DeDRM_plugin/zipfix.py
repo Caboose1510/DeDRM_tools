@@ -21,7 +21,7 @@ __version__ = "1.1"
 
 import sys
 import zlib
-import zipfilerugged
+import calibre_plugins.dedrm.zipfilerugged as zipfilerugged
 import os
 import os.path
 import getopt
@@ -49,7 +49,7 @@ class fixZip:
         self.inzip = zipfilerugged.ZipFile(zinput,'r')
         self.outzip = zipfilerugged.ZipFile(zoutput,'w')
         # open the input zip for reading only as a raw file
-        self.bzf = file(zinput,'rb')
+        self.bzf = open(zinput,'rb')
 
     def getlocalname(self, zi):
         local_header_offset = zi.header_offset
@@ -115,7 +115,7 @@ class fixZip:
         # if epub write mimetype file first, with no compression
         if self.ztype == 'epub':
             # first get a ZipInfo with current time and no compression
-            mimeinfo = ZipInfo('mimetype',compress_type=zipfilerugged.ZIP_STORED)
+            mimeinfo = ZipInfo(b'mimetype',compress_type=zipfilerugged.ZIP_STORED)
             mimeinfo.internal_attr = 1 # text file
             try:
                 # if the mimetype is present, get its info, including time-stamp
@@ -129,7 +129,7 @@ class fixZip:
                 mimeinfo.create_system = oldmimeinfo.create_system
             except:
                 pass
-            self.outzip.writestr(mimeinfo, _MIMETYPE)
+            self.outzip.writestr(mimeinfo, _MIMETYPE.encode('ascii'))
 
         # write the rest of the files
         for zinfo in self.inzip.infolist():

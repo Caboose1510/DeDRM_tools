@@ -6,13 +6,13 @@ from __future__ import print_function
 import sys
 import os
 import re
-import ineptepub
-import ignobleepub
-import epubtest
-import zipfix
-import ineptpdf
-import erdr2pml
-import k4mobidedrm
+import calibre_plugins.dedrm.ineptepub
+import calibre_plugins.dedrm.ignobleepub
+import calibre_plugins.dedrm.epubtest
+import calibre_plugins.dedrm.zipfix
+import calibre_plugins.dedrm.ineptpdf
+import calibre_plugins.dedrm.erdr2pml
+import calibre_plugins.dedrm.k4mobidedrm
 import traceback
 
 def decryptepub(infile, outdir, rscpath):

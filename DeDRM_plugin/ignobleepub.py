@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import with_statement
+from __future__ import print_function
 
 # ignobleepub.pyw, version 4.1
 # Copyright © 2009-2010 by i♥cabbages
@@ -41,7 +42,6 @@ from __future__ import with_statement
 """
 Decrypt Barnes & Noble encrypted ePub books.
 """
-from __future__ import print_function
 
 __license__ = 'GPL v3'
 __version__ = "4.1"
@@ -65,7 +65,7 @@ class SafeUnbuffered:
         if self.encoding == None:
             self.encoding = "utf-8"
     def write(self, data):
-        if isinstance(data,unicode):
+        if isinstance(data,bytes):
             data = data.encode(self.encoding,"replace")
         self.stream.write(data)
         self.stream.flush()
@@ -106,13 +106,13 @@ def unicode_argv():
             # Remove Python executable and commands if present
             start = argc.value - len(sys.argv)
             return [argv[i] for i in
-                    xrange(start, argc.value)]
+                    range(start, argc.value)]
         return [u"ineptepub.py"]
     else:
         argvencoding = sys.stdin.encoding
         if argvencoding == None:
             argvencoding = "utf-8"
-        return arg
+        return argv
 
 
 class IGNOBLEError(Exception):
