@@ -434,7 +434,7 @@ def gui_main():
             self.status['text'] = u"Decrypting..."
             try:
                 decrypt_status = decryptBook(userkey, inpath, outpath)
-            except Exception, e:
+            except Exception as e:
                 self.status['text'] = u"Error: {0}".format(e.args[0])
                 return
             if decrypt_status == 0:

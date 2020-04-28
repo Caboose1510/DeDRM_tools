@@ -447,7 +447,7 @@ def gui_main():
                         keyfileout.write(key)
                     success = True
                     tkMessageBox.showinfo(progname, u"Key successfully retrieved to {0}".format(outfile))
-            except Exception, e:
+            except Exception as e:
                 self.status['text'] = u"Error: {0}".format(e.args[0])
                 return
             self.status['text'] = u"Select backup.ab file"

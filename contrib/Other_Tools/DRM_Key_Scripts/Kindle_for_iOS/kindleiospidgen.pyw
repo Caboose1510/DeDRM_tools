@@ -256,7 +256,7 @@ def gui_main():
             self.status['text'] = u"Generating..."
             try:
                 keys = generatekeys(email, mac)
-            except Exception, e:
+            except Exception as e:
                 self.status['text'] = u"Error: (0}".format(e.args[0])
                 return
             self.status['text'] = ", ".join(key for key in keys)

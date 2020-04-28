@@ -236,7 +236,7 @@ def gui_main():
             self.status['text'] = u"Fetching..."
             try:
                 userkey = fetch_key(email, password)
-            except Exception, e:
+            except Exception as e:
                 self.status['text'] = u"Error: {0}".format(e.args[0])
                 return
             if len(userkey) == 28:

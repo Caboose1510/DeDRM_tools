@@ -192,7 +192,7 @@ class DeDRM(FileTypePlugin):
 
                 # mark that this version has been initialized
                 os.mkdir(self.verdir)
-        except Exception, e:
+        except Exception as e:
             traceback.print_exc()
             raise
 
@@ -206,7 +206,7 @@ class DeDRM(FileTypePlugin):
             print(u"{0} v{1}: Verifying zip archive integrity".format(PLUGIN_NAME, PLUGIN_VERSION))
             fr = zipfix.fixZip(path_to_ebook, inf.name)
             fr.fix()
-        except Exception, e:
+        except Exception as e:
             print(u"{0} v{1}: Error \'{2}\' when checking zip archive".format(PLUGIN_NAME, PLUGIN_VERSION, e.args[0]))
             raise Exception(e)
 
@@ -303,7 +303,7 @@ class DeDRM(FileTypePlugin):
                             return of.name
 
                         print(u"{0} v{1}: Failed to decrypt with new default key after {2:.1f} seconds".format(PLUGIN_NAME, PLUGIN_VERSION,time.time()-self.starttime))
-                except Exception, e:
+                except Exception as e:
                     pass
 
             print(u"{0} v{1}: Ultimately failed to decrypt after {2:.1f} seconds. Read the FAQs at Harper's repository: https://github.com/apprenticeharper/DeDRM_tools/blob/master/FAQs.md".format(PLUGIN_NAME, PLUGIN_VERSION,time.time()-self.starttime))
@@ -402,7 +402,7 @@ class DeDRM(FileTypePlugin):
                             return of.name
 
                         print(u"{0} v{1}: Failed to decrypt with new default key after {2:.1f} seconds".format(PLUGIN_NAME, PLUGIN_VERSION,time.time()-self.starttime))
-                except Exception, e:
+                except Exception as e:
                     print(u"{0} v{1}: Unexpected Exception trying a new default key after {2:.1f} seconds".format(PLUGIN_NAME, PLUGIN_VERSION, time.time()-self.starttime))
                     traceback.print_exc()
                     pass
@@ -504,7 +504,7 @@ class DeDRM(FileTypePlugin):
                         return of.name
 
                     print(u"{0} v{1}: Failed to decrypt with new default key after {2:.1f} seconds".format(PLUGIN_NAME, PLUGIN_VERSION,time.time()-self.starttime))
-            except Exception, e:
+            except Exception as e:
                 pass
 
         # Something went wrong with decryption.
@@ -535,7 +535,7 @@ class DeDRM(FileTypePlugin):
 
         try:
             book = k4mobidedrm.GetDecryptedBook(path_to_ebook,kindleDatabases,androidFiles,serials,pids,self.starttime)
-        except Exception, e:
+        except Exception as e:
             decoded = False
             # perhaps we need to get a new default Kindle for Mac/PC key
             defaultkeys = []
@@ -572,7 +572,7 @@ class DeDRM(FileTypePlugin):
                     for keyvalue in newkeys.values():
                         dedrmprefs.addnamedvaluetoprefs('kindlekeys','default_key',keyvalue)
                     dedrmprefs.writeprefs()
-                except Exception, e:
+                except Exception as e:
                     pass
             if not decoded:
                 #if you reached here then no luck raise and exception
