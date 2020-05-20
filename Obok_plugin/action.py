@@ -6,6 +6,7 @@ __license__   = 'GPL v3'
 __docformat__ = 'restructuredtext en'
 
 
+import codecs
 import os, traceback, zipfile
 
 try:
@@ -373,7 +374,7 @@ class InterfacePluginAction(InterfaceAction):
         zin = zipfile.ZipFile(book.filename, 'r')
         #print ('Kobo library filename: {0}'.format(book.filename))
         for userkey in self.userkeys:
-            print (_('Trying key: '), userkey.encode('hex_codec'))
+            print (_('Trying key: '), codecs.encode(userkey, 'hex'))
             check = True
             try:
                 fileout = PersistentTemporaryFile('.epub', dir=self.tdir)
