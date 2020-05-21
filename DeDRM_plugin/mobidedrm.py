@@ -93,7 +93,7 @@ class SafeUnbuffered:
         if self.encoding == None:
             self.encoding = "utf-8"
     def write(self, data):
-        if isinstance(data,unicode):
+        if isinstance(data,bytes):
             data = data.encode(self.encoding,"replace")
         self.stream.write(data)
         self.stream.flush()
@@ -139,7 +139,7 @@ def unicode_argv():
         argvencoding = sys.stdin.encoding
         if argvencoding == None:
             argvencoding = 'utf-8'
-        return arg
+        return sys.argv
 
 
 class DrmException(Exception):
@@ -153,12 +153,12 @@ class DrmException(Exception):
 # Implementation of Pukall Cipher 1
 def PC1(key, src, decryption=True):
     # if we can get it from alfcrypto, use that
-    try:
-        return Pukall_Cipher().PC1(key,src,decryption)
-    except NameError:
-        pass
-    except TypeError:
-        pass
+    #try:
+    #    return Pukall_Cipher().PC1(key,src,decryption)
+    #except NameError:
+    #    pass
+    #except TypeError:
+    #    pass
 
     # use slow python version, since Pukall_Cipher didn't load
     sum1 = 0;
@@ -168,8 +168,8 @@ def PC1(key, src, decryption=True):
          DrmException (u"PC1: Bad key length")
     wkey = []
     for i in range(8):
-        wkey.append(ord(key[i*2])<<8 | ord(key[i*2+1]))
-    dst = ""
+        wkey.append(key[i*2]<<8 | key[i*2+1])
+    dst = b''
     for i in range(len(src)):
         temp1 = 0;
         byteXorVal = 0;
@@ -180,7 +180,7 @@ def PC1(key, src, decryption=True):
             sum2  = (sum2+sum1)&0xFFFF
             temp1 = (temp1*20021+1)&0xFFFF
             byteXorVal ^= temp1 ^ sum2
-        curByte = ord(src[i])
+        curByte = src[i]
         if not decryption:
             keyXorVal = curByte * 257;
         curByte = ((curByte ^ (byteXorVal >> 8)) ^ byteXorVal) & 0xFF
@@ -188,21 +188,21 @@ def PC1(key, src, decryption=True):
             keyXorVal = curByte * 257;
         for j in range(8):
             wkey[j] ^= keyXorVal;
-        dst+=chr(curByte)
+        dst+=bytes([curByte])
     return dst
 
 def checksumPid(s):
     letters = 'ABCDEFGHIJKLMNPQRSTUVWXYZ123456789'
-    crc = (~binascii.crc32(s,-1))&0xFFFFFFFF
+    crc = (~binascii.crc32(s.encode('ascii'),-1))&0xFFFFFFFF
     crc = crc ^ (crc >> 16)
-    res = s
+    res = s.encode('ascii')
     l = len(letters)
     for i in (0,1):
         b = crc & 0xff
         pos = (b // l) ^ (b % l)
-        res += letters[pos%l].encode('utf-8')
+        res += letters[pos%l].encode('ascii')
         crc >>= 8
-    return res
+    return res.decode('ascii')
 
 def getSizeOfTrailingDataEntries(ptr, size, flags):
     def getSizeOfTrailingDataEntry(ptr, size):
@@ -210,7 +210,7 @@ def getSizeOfTrailingDataEntries(ptr, size, flags):
         if size <= 0:
             return result
         while True:
-            v = ord(ptr[size-1])
+            v = ptr[size-1]
             result |= (v & 0x7F) << bitpos
             bitpos += 7
             size -= 1
@@ -315,10 +315,10 @@ class MobiBook:
                     # reset the text to speech flag and clipping limit, if present
                     if type == 401 and size == 9:
                         # set clipping limit to 100%
-                        self.patchSection(0, '\144', 16 + self.mobi_length + pos + 8)
+                        self.patchSection(0, b'\144', 16 + self.mobi_length + pos + 8)
                     elif type == 404 and size == 9:
                         # make sure text to speech is enabled
-                        self.patchSection(0, '\0', 16 + self.mobi_length + pos + 8)
+                        self.patchSection(0, b'\0', 16 + self.mobi_length + pos + 8)
                     # print type, size, content, content.encode('hex')
                     pos += size
         except:
@@ -374,11 +374,12 @@ class MobiBook:
 
     def parseDRM(self, data, count, pidlist):
         found_key = None
-        keyvec1 = '\x72\x38\x33\xB0\xB4\xF2\xE3\xCA\xDF\x09\x01\xD6\xE2\xE0\x3F\x96'
+        keyvec1 = b'\x72\x38\x33\xB0\xB4\xF2\xE3\xCA\xDF\x09\x01\xD6\xE2\xE0\x3F\x96'
         for pid in pidlist:
             bigpid = pid.ljust(16,'\0')
+            bigpid = bigpid.encode('ascii')
             temp_key = PC1(keyvec1, bigpid, False)
-            temp_key_sum = sum(map(ord,temp_key)) & 0xff
+            temp_key_sum = sum(temp_key) & 0xff
             found_key = None
             for i in range(count):
                 verification, size, type, cksum, cookie = struct.unpack('>LLLBxxx32s', data[i*0x30:i*0x30+0x30])
@@ -394,7 +395,7 @@ class MobiBook:
             # Then try the default encoding that doesn't require a PID
             pid = '00000000'
             temp_key = keyvec1
-            temp_key_sum = sum(map(ord,temp_key)) & 0xff
+            temp_key_sum = sum(temp_key) & 0xff
             for i in range(count):
                 verification, size, type, cksum, cookie = struct.unpack('>LLLBxxx32s', data[i*0x30:i*0x30+0x30])
                 if cksum == temp_key_sum:
@@ -406,7 +407,7 @@ class MobiBook:
         return [found_key,pid]
 
     def getFile(self, outpath):
-        file(outpath,'wb').write(self.mobi_data)
+        open(outpath,'wb').write(self.mobi_data)
 
     def getBookType(self):
         if self.print_replica:
@@ -474,9 +475,9 @@ class MobiBook:
             if not found_key:
                 raise DrmException(u"No key found in {0:d} keys tried.".format(len(goodpids)))
             # kill the drm keys
-            self.patchSection(0, '\0' * drm_size, drm_ptr)
+            self.patchSection(0, b'\0' * drm_size, drm_ptr)
             # kill the drm pointers
-            self.patchSection(0, '\xff' * 4 + '\0' * 12, 0xA8)
+            self.patchSection(0, b'\xff' * 4 + b'\0' * 12, 0xA8)
 
         if pid=='00000000':
             print(u"File has default encryption, no specific key needed.")
@@ -484,7 +485,7 @@ class MobiBook:
             print(u"File is encoded with PID {0}.".format(checksumPid(pid)))
 
         # clear the crypto type
-        self.patchSection(0, "\0" * 2, 0xC)
+        self.patchSection(0, b'\0' * 2, 0xC)
 
         # decrypt sections
         print(u"Decrypting. Please wait . . .", end=' ')
@@ -504,7 +505,7 @@ class MobiBook:
                 mobidataList.append(data[-extra_size:])
         if self.num_sections > self.records+1:
             mobidataList.append(self.data_file[self.sections[self.records+1][0]:])
-        self.mobi_data = "".join(mobidataList)
+        self.mobi_data = b''.join(mobidataList)
         print(u"done")
         return
 
@@ -534,7 +535,7 @@ def cli_main():
             pidlist = []
         try:
             stripped_file = getUnencryptedBook(infile, pidlist)
-            file(outfile, 'wb').write(stripped_file)
+            open(outfile, 'wb').write(stripped_file)
         except DrmException as e:
             print(u"MobiDeDRM v{0} Error: {1:s}".format(__version__,e.args[0]))
             return 1
