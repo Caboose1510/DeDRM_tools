@@ -31,9 +31,9 @@ global charMap3
 global charMap4
 
 
-charMap1 = 'n5Pr6St7Uv8Wx9YzAb0Cd1Ef2Gh3Jk4M'
-charMap3 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
-charMap4 = 'ABCDEFGHIJKLMNPQRSTUVWXYZ123456789'
+charMap1 = b'n5Pr6St7Uv8Wx9YzAb0Cd1Ef2Gh3Jk4M'
+charMap3 = b'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+charMap4 = b'ABCDEFGHIJKLMNPQRSTUVWXYZ123456789'
 
 # crypto digestroutines
 import hashlib
@@ -84,7 +84,7 @@ def decode(data,map):
 def getTwoBitsFromBitField(bitField,offset):
     byteNumber = offset // 4
     bitPosition = 6 - 2*(offset % 4)
-    return ord(bitField[byteNumber]) >> bitPosition & 3
+    return bitField[byteNumber] >> bitPosition & 3
 
 # Returns the six bits at offset from a bit field
 def getSixBitsFromBitField(bitField,offset):
@@ -95,9 +95,11 @@ def getSixBitsFromBitField(bitField,offset):
 # 8 bits to six bits encoding from hash to generate PID string
 def encodePID(hash):
     global charMap3
-    PID = ''
+    PID = b''
     for position in range (0,8):
-        PID += charMap3[getSixBitsFromBitField(hash,position)]
+        a = charMap3[getSixBitsFromBitField(hash,position)]
+        print("=====> a = ", a, "type = ", type(a))
+        PID += bytes([charMap3[getSixBitsFromBitField(hash,position)]])
     return PID
 
 # Encryption table used to generate the device PID
@@ -150,7 +152,7 @@ def checksumPid(s):
     for i in (0,1):
         b = crc & 0xff
         pos = (b // l) ^ (b % l)
-        res += charMap4[pos%l]
+        res += bytes([charMap4[pos%l]])
         crc >>= 8
     return res
 
@@ -158,38 +160,45 @@ def checksumPid(s):
 # old kindle serial number to fixed pid
 def pidFromSerial(s, l):
     global charMap4
-    crc = crc32(s)
+    crc = crc32(s.encode('UTF-8'))
     arr1 = [0]*l
-    for i in xrange(len(s)):
+    for i in range(len(s)):
         arr1[i%l] ^= ord(s[i])
     crc_bytes = [crc >> 24 & 0xff, crc >> 16 & 0xff, crc >> 8 & 0xff, crc & 0xff]
-    for i in xrange(l):
+    for i in range(l):
         arr1[i] ^= crc_bytes[i&3]
-    pid = ""
-    for i in xrange(l):
+    pid = b""
+    for i in range(l):
         b = arr1[i] & 0xff
-        pid+=charMap4[(b >> 7) + ((b >> 5 & 3) ^ (b & 0x1f))]
+        pid += bytes([charMap4[(b >> 7) + ((b >> 5 & 3) ^ (b & 0x1f))]])
     return pid
 
 
 # Parse the EXTH header records and use the Kindle serial number to calculate the book pid.
 def getKindlePids(rec209, token, serialnum):
+    # input are all strings!
     if rec209 is None:
         return [serialnum]
 
     pids=[]
 
-    if isinstance(serialnum,unicode):
-        serialnum = serialnum.encode('utf-8')
+    print("===== DEBUG: serialnum = ", serialnum, type(serialnum))
+    print("===== DEBUG: token = ", token, type(token))
+    print("===== DEBUG: rec209 = ", rec209, type(rec209))
 
     # Compute book PID
-    pidHash = SHA1(serialnum+rec209+token)
+    # SHA1 takes bytes and returns bytes
+    pidHash = SHA1((serialnum+rec209+token).encode('UTF-8'))
+    print ("===== DEBUG: pidHash = ", pidHash, type(pidHash))
     bookPID = encodePID(pidHash)
+    print ("===== DEBUG: bookPID = ", bookPID, type(bookPID))
     bookPID = checksumPid(bookPID)
+    print ("===== DEBUG: bookPID2 = ", bookPID, type(bookPID))
     pids.append(bookPID)
 
     # compute fixed pid for old pre 2.5 firmware update pid as well
-    kindlePID = pidFromSerial(serialnum, 7) + "*"
+    kindlePID = pidFromSerial(serialnum, 7) + b"*"
+    print ("===== DEBUG: kindlePID = ", kindlePID, type(kindlePID))
     kindlePID = checksumPid(kindlePID)
     pids.append(kindlePID)
 

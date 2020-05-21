@@ -200,7 +200,7 @@ def checksumPid(s):
     for i in (0,1):
         b = crc & 0xff
         pos = (b // l) ^ (b % l)
-        res += letters[pos%l]
+        res += letters[pos%l].encode('utf-8')
         crc >>= 8
     return res
 
@@ -256,6 +256,7 @@ class MobiBook:
         self.data_file = open(infile, 'rb').read()
         self.mobi_data = ''
         self.header = self.data_file[0:78]
+        print("========== DEBUG: ", self.header[0x3C:0x3C+8])
         if self.header[0x3C:0x3C+8] != b'BOOKMOBI' and self.header[0x3C:0x3C+8] != b'TEXtREAd':
             raise DrmException(u"Invalid file format")
         self.magic = self.header[0x3C:0x3C+8]
@@ -452,7 +453,7 @@ class MobiBook:
             else:
                 print(u"Warning: PID {0} has wrong number of digits".format(pid))
 
-        # print(u"======= DEBUG good pids = ", goodpids)
+        print(u"======= DEBUG good pids = ", goodpids)
 
         if self.crypto_type == 1:
             t1_keyvec = 'QDCVEPMU675RUBSZ'
