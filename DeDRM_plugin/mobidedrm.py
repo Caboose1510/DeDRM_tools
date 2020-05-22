@@ -193,16 +193,16 @@ def PC1(key, src, decryption=True):
 
 def checksumPid(s):
     letters = 'ABCDEFGHIJKLMNPQRSTUVWXYZ123456789'
-    crc = (~binascii.crc32(s.encode('ascii'),-1))&0xFFFFFFFF
+    crc = (~binascii.crc32(s,-1))&0xFFFFFFFF
     crc = crc ^ (crc >> 16)
-    res = s.encode('ascii')
+    res = s
     l = len(letters)
     for i in (0,1):
         b = crc & 0xff
         pos = (b // l) ^ (b % l)
         res += letters[pos%l].encode('ascii')
         crc >>= 8
-    return res.decode('ascii')
+    return res
 
 def getSizeOfTrailingDataEntries(ptr, size, flags):
     def getSizeOfTrailingDataEntry(ptr, size):
@@ -226,7 +226,7 @@ def getSizeOfTrailingDataEntries(ptr, size, flags):
     # if multibyte data is included in the encryped data, we'll
     # have already cleared this flag.
     if flags & 1:
-        num += (ord(ptr[size - num - 1]) & 0x3) + 1
+        num += (ptr[size - num - 1] & 0x3) + 1
     return num
 
 
@@ -256,7 +256,6 @@ class MobiBook:
         self.data_file = open(infile, 'rb').read()
         self.mobi_data = ''
         self.header = self.data_file[0:78]
-        print("========== DEBUG: ", self.header[0x3C:0x3C+8])
         if self.header[0x3C:0x3C+8] != b'BOOKMOBI' and self.header[0x3C:0x3C+8] != b'TEXtREAd':
             raise DrmException(u"Invalid file format")
         self.magic = self.header[0x3C:0x3C+8]
@@ -305,7 +304,7 @@ class MobiBook:
             exth = ''
             if exth_flag & 0x40:
                 exth = self.sect[16 + self.mobi_length:]
-            if (len(exth) >= 12) and (exth[:4] == 'EXTH'):
+            if (len(exth) >= 12) and (exth[:4] == b'EXTH'):
                 nitems, = struct.unpack('>I', exth[8:12])
                 pos = 12
                 for i in range(nitems):
@@ -321,8 +320,8 @@ class MobiBook:
                         self.patchSection(0, b'\0', 16 + self.mobi_length + pos + 8)
                     # print type, size, content, content.encode('hex')
                     pos += size
-        except:
-            pass
+        except Exception as e:
+            print(u"Cannot set meta_array: Error: {:s}".format(e.args[0]))
 
     def getBookTitle(self):
         codec_map = {
@@ -346,8 +345,8 @@ class MobiBook:
         return title.decode(codec)
 
     def getPIDMetaInfo(self):
-        rec209 = ''
-        token = ''
+        rec209 = b''
+        token = b''
         if 209 in self.meta_array:
             rec209 = self.meta_array[209]
             data = rec209
@@ -376,8 +375,8 @@ class MobiBook:
         found_key = None
         keyvec1 = b'\x72\x38\x33\xB0\xB4\xF2\xE3\xCA\xDF\x09\x01\xD6\xE2\xE0\x3F\x96'
         for pid in pidlist:
-            bigpid = pid.ljust(16,'\0')
-            bigpid = bigpid.encode('ascii')
+            bigpid = pid.ljust(16,b'\0')
+            bigpid = bigpid
             temp_key = PC1(keyvec1, bigpid, False)
             temp_key_sum = sum(temp_key) & 0xff
             found_key = None
@@ -444,6 +443,7 @@ class MobiBook:
                 raise DrmException(u"Cannot decode library or rented ebooks.")
 
         goodpids = []
+        # print("DEBUG ==== pidlist = ", pidlist)
         for pid in pidlist:
             if len(pid)==10:
                 if checksumPid(pid[0:-2]) != pid:
@@ -454,7 +454,7 @@ class MobiBook:
             else:
                 print(u"Warning: PID {0} has wrong number of digits".format(pid))
 
-        print(u"======= DEBUG good pids = ", goodpids)
+        # print(u"======= DEBUG good pids = ", goodpids)
 
         if self.crypto_type == 1:
             t1_keyvec = 'QDCVEPMU675RUBSZ'
