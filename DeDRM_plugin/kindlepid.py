@@ -79,7 +79,7 @@ def crc32(s):
     return (~binascii.crc32(s,-1))&0xFFFFFFFF
 
 def checksumPid(s):
-    crc = crc32(s)
+    crc = crc32(s.encode('ascii'))
     crc = crc ^ (crc >> 16)
     res = s
     l = len(letters)
@@ -136,6 +136,6 @@ def cli_main():
 
 
 if __name__ == "__main__":
-    sys.stdout=SafeUnbuffered(sys.stdout)
-    sys.stderr=SafeUnbuffered(sys.stderr)
+    #sys.stdout=SafeUnbuffered(sys.stdout)
+    #sys.stderr=SafeUnbuffered(sys.stderr)
     sys.exit(cli_main())
