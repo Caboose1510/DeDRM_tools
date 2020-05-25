@@ -420,7 +420,6 @@ def decryptBook(userkey, inpath, outpath):
                 return 1
             bookkey = rsa.decrypt(codecs.decode(bookkey.encode('ascii'), 'base64'))
             # Padded as per RSAES-PKCS1-v1_5
-            print(bookkey[-17])
             if bookkey[-17] != 0:
                 print(u"Could not decrypt {0:s}. Wrong key".format(os.path.basename(inpath)))
                 return 2
