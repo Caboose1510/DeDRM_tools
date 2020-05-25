@@ -353,16 +353,6 @@ class ZipInfo (object):
             except UnicodeEncodeError:
                 return self.filename.encode('utf-8'), self.flag_bits | 0x800
 
-    def _decodeFilename(self):
-        if self.flag_bits & 0x800:
-            try:
-                #print "decoding filename",self.filename
-                return self.filename.decode('utf-8')
-            except:
-                return self.filename
-        else:
-            return self.filename
-
     def _decodeExtra(self):
         # Try to decode the extra field.
         extra = self.extra
@@ -771,7 +761,6 @@ class ZipFile:
 
             x._decodeExtra()
             x.header_offset = x.header_offset + concat
-            x.filename = x._decodeFilename()
             self.filelist.append(x)
             self.NameToInfo[x.filename] = x
 
