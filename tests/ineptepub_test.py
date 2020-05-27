@@ -20,9 +20,6 @@ class Stream(object):
         self.encoding = None
 
 
-logger.warning(Stream.__module__ + '.' + Stream.__name__)
-
-
 # TODO SafeUnbuffered
 # python 2: unicode converted to python2 str
 # python 3: stdout/stderr only allow str
@@ -81,13 +78,37 @@ def test_load_crypto_none():
             _load_crypto_libcrypto()
 
 
+class FakeCrypto(object):
+    def __init__(self):
+        pass
+
+    def __getattr__(self, name):
+        logger.warning('loading {}'.format(name))
+
+
 def test_RSA_init():
-    from mock import patch
-    from crypto import d2i_RSAPrivateKey
-    with patch('crypto.d2i_RSAPrivateKey'):
-        RSA = loadAES_RSA()
-        RSA(b'')
-        d2i_RSAPrivateKey.assert_called()
+    from mock import patch, MagicMock, PropertyMock, ANY
+    with patch('ctypes.CDLL') as loader_mock, \
+            patch('ctypes.POINTER', side_effect=lambda a: a), \
+            patch('ctypes.cast', side_effect=lambda a, b: a), \
+            patch('ctypes.c_char_p', side_effect=lambda a: a), \
+            patch('ctypes.create_string_buffer', side_effect=lambda a: a):
+        # provide crypto_mock as loaded library
+        crypto_mock = MagicMock()
+        loader_mock.return_value = crypto_mock
+        # provide mocks for crypto functions attributes
+        d2i_RSAPrivateKey_mock = MagicMock()
+        crypto_mock.attach_mock(d2i_RSAPrivateKey_mock, 'd2i_RSAPrivateKey')
+        restype_mock = PropertyMock()
+        argtypes_mock = PropertyMock()
+        type(d2i_RSAPrivateKey_mock).restype = restype_mock
+        type(d2i_RSAPrivateKey_mock).argtypes = argtypes_mock
+        (AES, RSA) = loadAES_RSA()
+        der = b'marker'
+        RSA(der)
+        restype_mock.assert_called()
+        argtypes_mock.assert_called()
+        d2i_RSAPrivateKey_mock.assert_called_once_with(None, der, len(der))
 
 
 def loadAES_RSA():
