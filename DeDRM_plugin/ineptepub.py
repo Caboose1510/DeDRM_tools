@@ -61,6 +61,9 @@ from zipfile import ZipInfo, ZipFile, ZIP_STORED, ZIP_DEFLATED
 from contextlib import closing
 import xml.etree.ElementTree as etree
 
+from . import six
+
+
 # Wrap a stream so that output gets flushed immediately
 # and also make sure that any unicode strings get
 # encoded using "replace" before writing them.
@@ -68,32 +71,36 @@ class SafeUnbuffered:
     def __init__(self, stream):
         self.stream = stream
         self.encoding = stream.encoding
-        if self.encoding == None:
+        if self.encoding is None:
             self.encoding = "utf-8"
+
     def write(self, data):
-        if isinstance(data,bytes):
-            data = data.encode(self.encoding,"replace")
+        # python2: convert unicode to str
+        if six.PY2 and isinstance(data, six.text_type):
+            data = data.encode(self.encoding, 'replace')
         self.stream.write(data)
         self.stream.flush()
+
     def __getattr__(self, attr):
         return getattr(self.stream, attr)
 
+
 try:
     from calibre.constants import iswindows, isosx
-except:
+except Exception:
     iswindows = sys.platform.startswith('win')
     isosx = sys.platform.startswith('darwin')
 
+
 def unicode_argv():
-    if iswindows:
+    """Convert arguments to text type (python2: unicode, python3: str)"""
+    if six.PY2 and iswindows:
         # Uses shell32.GetCommandLineArgvW to get sys.argv as a list of Unicode
         # strings.
 
         # Versions 2.x of Python don't support Unicode in sys.argv on
         # Windows, with the underlying Windows API instead replacing multi-byte
         # characters with '?'.
-
-
         from ctypes import POINTER, byref, cdll, c_int, windll
         from ctypes.wintypes import LPCWSTR, LPWSTR
 
@@ -116,8 +123,10 @@ def unicode_argv():
         return [u"ineptepub.py"]
     else:
         argvencoding = sys.stdin.encoding
-        if argvencoding == None:
+        if argvencoding is None:
             argvencoding = "utf-8"
+        return [six.ensure_text(arg, encoding=argvencoding, errors='replace')
+                for arg in sys.argv]
         return argv
 
 
