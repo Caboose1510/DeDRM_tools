@@ -86,6 +86,30 @@ class FakeCrypto(object):
         logger.warning('loading {}'.format(name))
 
 
+def test_load_crypto():
+    from DeDRM_plugin.ineptepub import _load_crypto
+    from mock import patch
+    with patch('DeDRM_plugin.ineptepub._load_crypto_libcrypto') as libcrypto, \
+            patch('DeDRM_plugin.ineptepub._load_crypto_pycrypto') as pycrypto:
+        libcrypto.return_value = (None, None)
+        pycrypto.return_value = (None, None)
+        _load_crypto()
+        libcrypto.assert_called()
+        pycrypto.assert_not_called()
+
+
+def test_load_crypto_fallback():
+    from DeDRM_plugin.ineptepub import _load_crypto
+    from mock import patch
+    with patch('DeDRM_plugin.ineptepub._load_crypto_libcrypto') as libcrypto, \
+            patch('DeDRM_plugin.ineptepub._load_crypto_pycrypto') as pycrypto:
+        libcrypto.side_effect = ImportError
+        pycrypto.return_value = (None, None)
+        _load_crypto()
+        libcrypto.assert_called()
+        pycrypto.assert_called()
+
+
 def test_RSA_init():
     from mock import patch, MagicMock, PropertyMock, ANY
     with patch('ctypes.CDLL') as loader_mock, \
