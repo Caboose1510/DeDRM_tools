@@ -425,7 +425,7 @@ class DeDRM(FileTypePlugin):
         # Attempt to decrypt epub with each encryption key (generated or provided).
         print("{0} v{1}: {2} is a PDF ebook".format(PLUGIN_NAME, PLUGIN_VERSION, os.path.basename(path_to_ebook)))
         for keyname, userkeyhex in dedrmprefs['adeptkeys'].items():
-            userkey = userkeyhex.decode('hex')
+            userkey = codecs.decode(userkeyhex, 'hex')
             print("{0} v{1}: Trying Encryption key {2:s}".format(PLUGIN_NAME, PLUGIN_VERSION, keyname))
             of = self.temporary_file(u".pdf")
 
