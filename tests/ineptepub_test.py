@@ -121,20 +121,24 @@ def test_load_crypto_fallback_ADEPTError():
 
 
 def mock_ctypes(f):
-    """Mock ctypes functions. First argument is a MagicMock returned for
+    """Mock ctypes functions.
+
+    First argument is a MagicMock returned for
     each CDLL call, so that <mock>.return_value.function_name can be
-    used to check targetted function calls"""
+    used to check targetted function calls.
+
+    Second argument is create_string_buffer mock."""
     @mock.patch('ctypes.c_char_p', side_effect=lambda a: a)
     @mock.patch('ctypes.cast', side_effect=lambda a, b: a)
     @mock.patch('ctypes.POINTER', side_effect=lambda a: a)
     @mock.patch('ctypes.create_string_buffer', side_effect=lambda a: a)
     @mock.patch('ctypes.CDLL')
-    def wrapper(CDLL, create_string_buffer, POINTER, cast, c_char_p,
-                *args, **kwargs):
-        # only retains CDLL mock
+    def wrapper(*args, **kwargs):
         custom_args = list(args)
-        custom_args.insert(0, create_string_buffer)
-        custom_args.insert(0, CDLL.return_value)
+        # drops mock except create_string_buffer and CDLL
+        custom_args = custom_args[:-3]
+        # replace CDLL mock by its return_value
+        custom_args[0] = custom_args[0].return_value
         return f(*custom_args, **kwargs)
     return wrapper
 
@@ -242,66 +246,95 @@ ENCRYPTION_XML = """<?xml version="1.0"?>
 """
 
 
-def test_decryptor_decompress():
-    from mock import MagicMock, patch, call, sentinel
-    from DeDRM_plugin.ineptepub import Decryptor
-    import DeDRM_plugin.ineptepub
-    AES = MagicMock()
-    RSA = MagicMock()
-    DeDRM_plugin.ineptepub.AES = AES
-    DeDRM_plugin.ineptepub.RSA = RSA
-    key_marker = b'key'
+def mockAES_RSA(f):
+    @mock.patch('DeDRM_plugin.ineptepub.AES')
+    @mock.patch('DeDRM_plugin.ineptepub.RSA')
+    def wrapped_f(*args, **kwargs):
+        custom_args = list(args)
+        # drop AES, RSA args
+        return f(*custom_args[:-2], **kwargs)
+    return wrapped_f
+
+
+@mockAES_RSA
+def test_decryptor_init():
+    """Check XML unpack"""
+    from DeDRM_plugin.ineptepub import AES, Decryptor
+    key_marker = mock.sentinel.key
     d = Decryptor(key_marker, ENCRYPTION_XML)
-    AES.assert_called_with(key_marker)
+    AES.assert_called_with(mock.sentinel.key)
     assert len(d._encrypted) == 2
     assert six.b('path1') in d._encrypted
     assert six.b('path2') in d._encrypted
 
-    encrypted_marker = b'encrypted'
-    with patch('zlib.decompressobj') as zlib:
-        # decompress return values untouched
-        # flush append empty string
-        dc = MagicMock()
-        dc.decompress.side_effect = lambda a: a
-        dc.flush.return_value = b''
-        # install mock
-        zlib.return_value = dc
-        # perform decompress
-        value = d.decompress(encrypted_marker)
-        zlib.assert_called_with(-15)
-        dc.decompress.has_calls(
-            call(encrypted_marker),
-            call(b'Z')
-        )
-        dc.flush.assert_called()
-        # check that remaining bytes are appended when available
-        assert value == encrypted_marker + b'Z'
 
-        dc.decompress.side_effect = lambda a: a if a != b'Z' else b''
-        value = d.decompress(encrypted_marker)
-        zlib.assert_called_with(-15)
-        dc.decompress.has_calls(
-            call(encrypted_marker),
-            call(b'Z')
-        )
-        dc.flush.assert_called()
-        # in this case no reminaing byte is applied
-        assert value == encrypted_marker
+def mock_decompress(value, value_Z):
+    def wrapper(f):
+        @mock.patch('zlib.decompressobj')
+        def wrapped_f(decompressobj, *args, **kwargs):
+            # mock decompress / flush calls
+            dc = decompressobj.return_value
 
-        with patch('DeDRM_plugin.ineptepub.Decryptor.decompress') as dd:
-            dd.return_value = sentinel.decompress
-            data_marker = b''.join(map(bytes, range(0, 30)))
-            # last value is used to cut value
-            # 3 -> last three bytes are cut
-            cut = 3
-            data_marker = data_marker + bytes([cut])
-            decrypted = d.decrypt('path1', data_marker)
-            # 16 first bytes are skipped to call decrypt
-            assert AES.decrypt.is_called_with(data_marker[16:])
-            # decrypted value is cut before decompress
-            assert dd.is_called_with(data_marker[16:-cut])
-            # returned value is decompress result
-            assert decrypted == sentinel.decompress
+            def mock_decompress(a):
+                if a == mock.sentinel.compressed:
+                    return value
+                elif a == b'Z':
+                    return value_Z
+                else:
+                    raise Exception()
+            dc.decompress.side_effect = mock_decompress
+            dc.flush.return_value = b''
+            f(decompressobj, *args, **kwargs)
+        return wrapped_f
+    return wrapper
+
+
+@mock_decompress(b'decompressed', b'')
+@mockAES_RSA
+def test_decryptor_decompress(decompressobj):
+    """Check decompress method"""
+    from DeDRM_plugin.ineptepub import Decryptor
+    MockDecryptor = mock.create_autospec(Decryptor)
+    # perform decompress
+    value = Decryptor.decompress(MockDecryptor, mock.sentinel.compressed)
+    # check decompressobj init
+    decompressobj.assert_called_with(-15)
+    dc = decompressobj.return_value
+    # check decompress calls
+    dc.decompress.has_calls(
+        mock.call(mock.sentinel.compressed),
+        mock.call(b'Z')
+    )
+    # check final flush
+    dc.flush.assert_called()
+    # check that remaining bytes are appended when available
+    assert value == b'decompressed' + b''
+
+    #dc.decompress.side_effect = lambda a: a if a != b'Z' else b''
+    #value = d.decompress(encrypted_marker)
+    #zlib.assert_called_with(-15)
+    #dc.decompress.has_calls(
+    #    call(encrypted_marker),
+    #    call(b'Z')
+    #)
+    #dc.flush.assert_called()
+    ## in this case no reminaing byte is applied
+    #assert value == encrypted_marker
+
+    #with patch('DeDRM_plugin.ineptepub.Decryptor.decompress') as dd:
+    #    dd.return_value = sentinel.decompress
+    #    data_marker = b''.join(map(bytes, range(0, 30)))
+    #    # last value is used to cut value
+    #    # 3 -> last three bytes are cut
+    #    cut = 3
+    #    data_marker = data_marker + bytes([cut])
+    #    decrypted = d.decrypt('path1', data_marker)
+    #    # 16 first bytes are skipped to call decrypt
+    #    assert AES.decrypt.is_called_with(data_marker[16:])
+    #    # decrypted value is cut before decompress
+    #    assert dd.is_called_with(data_marker[16:-cut])
+    #    # returned value is decompress result
+    #    assert decrypted == sentinel.decompress
 
 
 def loadAES_RSA():
