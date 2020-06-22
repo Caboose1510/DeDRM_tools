@@ -78,6 +78,8 @@ from decimal import *
 from itertools import chain, islice
 import xml.etree.ElementTree as etree
 
+import six
+
 # Wrap a stream so that output gets flushed immediately
 # and also make sure that any unicode strings get
 # encoded using "replace" before writing them.
@@ -2015,7 +2017,7 @@ class PDFSerializer(object):
     def dump(self, outf):
         self.outf = outf
         self.write(self.version)
-        self.write('\n%\xe2\xe3\xcf\xd3\n')
+        self.write(b'\n%\xe2\xe3\xcf\xd3\n')
         doc = self.doc
         objids = self.objids
         xrefs = {}
@@ -2037,18 +2039,18 @@ class PDFSerializer(object):
         startxref = self.tell()
 
         if not gen_xref_stm:
-            self.write('xref\n')
-            self.write('0 %d\n' % (maxobj + 1,))
-            for objid in xrange(0, maxobj + 1):
+            self.write(b'xref\n')
+            self.write(b'0 %d\n' % (maxobj + 1,))
+            for objid in range(0, maxobj + 1):
                 if objid in xrefs:
                     # force the genno to be 0
-                    self.write("%010d 00000 n \n" % xrefs[objid][0])
+                    self.write(b"%010d 00000 n \n" % xrefs[objid][0])
                 else:
-                    self.write("%010d %05d f \n" % (0, 65535))
+                    self.write(b"%010d %05d f \n" % (0, 65535))
 
-            self.write('trailer\n')
+            self.write(b'trailer\n')
             self.serialize_object(trailer)
-            self.write('\nstartxref\n%d\n%%%%EOF' % startxref)
+            self.write(b'\nstartxref\n%d\n%%%%EOF' % startxref)
 
         else: # Generate crossref stream.
 
@@ -2148,7 +2150,7 @@ class PDFSerializer(object):
             if self.last.isalnum():
                 self.write(' ')
             self.write(str(obj).lower())
-        elif isinstance(obj, (int, long)):
+        elif isinstance(obj, six.integer_types):
             if self.last.isalnum():
                 self.write(' ')
             self.write(str(obj))
