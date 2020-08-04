@@ -126,7 +126,7 @@ def generatePidSeed(table,dsn) :
 def generateDevicePID(table,dsn,nbRoll):
     global charMap4
     seed = generatePidSeed(table,dsn)
-    pidAscii = ''
+    pidAscii = b''
     pid = [(seed >>24) &0xFF,(seed >> 16) &0xff,(seed >> 8) &0xFF,(seed) & 0xFF,(seed>>24) & 0xFF,(seed >> 16) &0xff,(seed >> 8) &0xFF,(seed) & 0xFF]
     index = 0
     for counter in range (0,nbRoll):
@@ -134,7 +134,7 @@ def generateDevicePID(table,dsn,nbRoll):
         index = (index+1) %8
     for counter in range (0,8):
         index = ((((pid[counter] >>5) & 3) ^ pid[counter]) & 0x1f) + (pid[counter] >> 7)
-        pidAscii += charMap4[index]
+        pidAscii += bytes([charMap4[index]])
     return pidAscii
 
 def crc32(s):
@@ -206,7 +206,7 @@ def getK4Pids(rec209, token, kindleDatabase):
 
     try:
         # Get the kindle account token, if present
-        kindleAccountToken = (kindleDatabase[1])['kindle.account.tokens'].decode('hex')
+        kindleAccountToken = bytearray.fromhex((kindleDatabase[1])['kindle.account.tokens']).decode()
 
     except KeyError:
         kindleAccountToken=""
@@ -214,30 +214,30 @@ def getK4Pids(rec209, token, kindleDatabase):
 
     try:
         # Get the DSN token, if present
-        DSN = (kindleDatabase[1])['DSN'].decode('hex')
+        DSN = bytearray.fromhex((kindleDatabase[1])['DSN']).decode()
         print(u"Got DSN key from database {0}".format(kindleDatabase[0]))
     except KeyError:
         # See if we have the info to generate the DSN
         try:
             # Get the Mazama Random number
-            MazamaRandomNumber = (kindleDatabase[1])['MazamaRandomNumber'].decode('hex')
+            MazamaRandomNumber = bytearray.fromhex((kindleDatabase[1])['MazamaRandomNumber']).decode()
             #print u"Got MazamaRandomNumber from database {0}".format(kindleDatabase[0])
 
             try:
                 # Get the SerialNumber token, if present
-                IDString = (kindleDatabase[1])['SerialNumber'].decode('hex')
+                IDString = bytearray.fromhex((kindleDatabase[1])['SerialNumber']).decode()
                 print(u"Got SerialNumber from database {0}".format(kindleDatabase[0]))
             except KeyError:
                  # Get the IDString we added
-                IDString = (kindleDatabase[1])['IDString'].decode('hex')
+                IDString = bytearray.fromhex((kindleDatabase[1])['IDString']).decode()
 
             try:
                 # Get the UsernameHash token, if present
-                encodedUsername = (kindleDatabase[1])['UsernameHash'].decode('hex')
+                encodedUsername = bytearray.fromhex((kindleDatabase[1])['UsernameHash']).decode()
                 print(u"Got UsernameHash from database {0}".format(kindleDatabase[0]))
             except KeyError:
                 # Get the UserName we added
-                UserName = (kindleDatabase[1])['UserName'].decode('hex')
+                UserName = bytearray.fromhex((kindleDatabase[1])['UserName']).decode()
                 # encode it
                 encodedUsername = encodeHash(UserName,charMap1)
                 #print u"encodedUsername",encodedUsername.encode('hex')
@@ -267,19 +267,19 @@ def getK4Pids(rec209, token, kindleDatabase):
     # Compute book PIDs
 
     # book pid
-    pidHash = SHA1(DSN+kindleAccountToken+rec209+token)
+    pidHash = SHA1(DSN.encode()+kindleAccountToken.encode()+rec209+token)
     bookPID = encodePID(pidHash)
     bookPID = checksumPid(bookPID)
     pids.append(bookPID)
 
     # variant 1
-    pidHash = SHA1(kindleAccountToken+rec209+token)
+    pidHash = SHA1(kindleAccountToken.encode()+rec209+token)
     bookPID = encodePID(pidHash)
     bookPID = checksumPid(bookPID)
     pids.append(bookPID)
 
     # variant 2
-    pidHash = SHA1(DSN+rec209+token)
+    pidHash = SHA1(DSN.encode()+rec209+token)
     bookPID = encodePID(pidHash)
     bookPID = checksumPid(bookPID)
     pids.append(bookPID)
