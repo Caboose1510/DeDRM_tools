@@ -2099,7 +2099,7 @@ class PDFSerializer(object):
                 data.append(struct.pack('>L', f2)[-fl2:])
                 data.append(struct.pack('>L', f3)[-fl3:])
             index.extend((first, prev - first + 1))
-            data = zlib.compress(''.join(data))
+            data = zlib.compress(b''.join(data))
             dic = {'Type': LITERAL_XREF, 'Size': prev + 1, 'Index': index,
                    'W': [1, fl2, fl3], 'Length': len(data),
                    'Filter': LITERALS_FLATE_DECODE[0],
@@ -2108,7 +2108,7 @@ class PDFSerializer(object):
                 dic['Info'] = trailer['Info']
             xrefstm = PDFStream(dic, data)
             self.serialize_indirect(maxobj, xrefstm)
-            self.write('startxref\n%d\n%%%%EOF' % startxref)
+            self.write(b'startxref\n%d\n%%%%EOF' % startxref)
     def write(self, data):
         self.outf.write(data)
         self.last = data[-1:]

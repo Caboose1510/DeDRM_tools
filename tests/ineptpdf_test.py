@@ -100,22 +100,7 @@ def test_PDFSerializer_dump(PDFParser, PDFDocument):
       * extracted genno is never used. replaced by 0
       * for objid not in xrefs, position=0,revision=65535,f is inserted
       * startxref points to xref, followed by trailer
-    * xref stream:
-      * maxoffset is max of startxref position and maxobj position
-      * increase fl2 so that (65536 + (fl2 - 2)*256) > maxoffset
-      * increase fl3 so that (256 + (fl3 - 1)*256) > maxindex
-      * for earch objid, data is:
-        * 2 (PDFObjStmRef) or 1 (data)
-        * stmid or data
-        * index or revision number set to 0
-        * stmid and index are split to get rid for extra bytes (fl2, fl3)
-      * data is compressed with zlib
-      * dic stores information for decoding, including fl2 and fl3, and index
-        that lists consecutives indexes (if indexes range [1,n], index is
-        [[1,n]])
-      * PDFStream is used with dic and data to obtain a PDF object to serialize
-      * startxref points to PDFStream
-
+    * xref stream: see next test
 
     Some background:
     * tell() gives file position; it is used to insert in xref table "address"
@@ -164,3 +149,52 @@ def test_PDFSerializer_dump(PDFParser, PDFDocument):
     ])
 
 
+@mock.patch('DeDRM_plugin.ineptpdf.PDFDocument')
+@mock.patch('DeDRM_plugin.ineptpdf.PDFParser')
+@mock.patch('zlib.compress')
+def test_PDFSerializer_dump_xref_stm(compress, PDFParser, PDFDocument):
+    """Dump performs the following ops
+    * xref stream:
+      * maxoffset is max of startxref position and maxobj position
+      * increase fl2 so that (65536 + (fl2 - 2)*256) > maxoffset
+      * increase fl3 so that (256 + (fl3 - 1)*256) > maxindex
+      * for earch objid, data is:
+        * 2 (PDFObjStmRef) or 1 (data)
+        * stmid or data
+        * index or revision number set to 0
+        * stmid and index are split to get rid for extra bytes (fl2, fl3)
+      * data is compressed with zlib
+      * dic stores information for decoding, including fl2 and fl3, and index
+        that lists consecutives indexes (if indexes range [1,n], index is
+        [[1,n]])
+      * PDFStream is used with dic and data to obtain a PDF object to serialize
+      * startxref points to PDFStream
+    """
+    from DeDRM_plugin.ineptpdf import PDFSerializer, PDFDocument, PDFObjStmRef, gen_xref_stm
+    import DeDRM_plugin.ineptpdf
+    DeDRM_plugin.ineptpdf.gen_xref_stm = True
+    xref = mock.MagicMock()
+    xref.objids.return_value = [1, 2]
+    objs = {}
+    objs[1] = mock.MagicMock()
+    objs[2] = mock.MagicMock()
+    PDFDocument.return_value.xrefs = [ xref ]
+    PDFDocument.return_value.getobj.side_effect = objs.__getitem__
+    serializer = mock.MagicMock(spec=PDFSerializer)
+    serializer.tell.return_value = 3
+    serializer.doc = PDFDocument()
+    serializer.objids = [1, 2]
+    serializer.version = mock.sentinel.version
+    serializer.trailer = [['Extra', 'Test'], ['Root', 'RootValue']]
+    PDFSerializer.dump(serializer, mock.MagicMock())
+    serializer.tell.assert_has_calls([mock.call(), mock.call()])
+    serializer.write.assert_has_calls([
+            mock.call(mock.sentinel.version),
+            mock.call(b'\n%\xe2\xe3\xcf\xd3\n'),
+            mock.call(b'startxref\n3\n%%EOF')
+            ])
+    serializer.serialize_indirect.assert_has_calls([
+        mock.call(1, objs[1]),
+        mock.call(2, objs[2])
+    ])
+    compress.assert_has_calls([mock.call()])
